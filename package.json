@@ -1,0 +1,23 @@
+{
+  "name": "peekaboo-mcp",
+  "version": "1.0.0",
+  "description": "Minimal MCP server for read-only file system access",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "tsx test-client.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": ["mcp", "model-context-protocol", "filesystem", "readonly"],
+  "license": "MIT"
+}

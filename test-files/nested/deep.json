@@ -1,0 +1,5 @@
+{
+  "message": "This file is in a nested directory",
+  "purpose": "Testing directory traversal",
+  "depth": 2
+}
