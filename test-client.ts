@@ -29,15 +29,29 @@ async function testPeekabooServer() {
     await client.connect(transport);
     console.log('✓ Connected to Peekaboo server\n');
 
-    // Test 1: List resources
-    console.log('Test 1: Listing root directory resources...');
+    // Test 1: List resources (recursive by default)
+    console.log('Test 1: Listing root directory resources recursively...');
     const resources = await client.listResources();
-    console.log(`Found ${resources.resources.length} items:`);
-    resources.resources.slice(0, 5).forEach(r => {
-      console.log(`  - ${r.name} (${r.mimeType})`);
+    console.log(`Found ${resources.resources.length} total items (including nested):`);
+    
+    // Show directory structure
+    const directories = resources.resources.filter(r => r.mimeType === 'inode/directory').slice(0, 5);
+    const files = resources.resources.filter(r => r.mimeType === 'text/plain').slice(0, 5);
+    
+    console.log('Directories:');
+    directories.forEach(r => {
+      const depth = r.name.split('/').length - 1;
+      const indent = '  '.repeat(depth);
+      console.log(`${indent}- ${r.name}`);
     });
-    if (resources.resources.length > 5) {
-      console.log(`  ... and ${resources.resources.length - 5} more`);
+    
+    console.log('\nFiles:');
+    files.forEach(r => {
+      console.log(`  - ${r.name}`);
+    });
+    
+    if (resources.resources.length > 10) {
+      console.log(`\n  ... and ${resources.resources.length - 10} more items`);
     }
     console.log();
 

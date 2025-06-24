@@ -13,7 +13,13 @@ export function normalizeAndValidatePath(rootDir: string, requestedPath: string)
   return resolvedPath;
 }
 
-export async function listDirectory(rootDir: string, relativePath: string): Promise<FileSystemItem[]> {
+export async function listDirectory(
+  rootDir: string, 
+  relativePath: string, 
+  recursive: boolean = true,
+  maxDepth: number = 10,
+  currentDepth: number = 0
+): Promise<FileSystemItem[]> {
   const fullPath = normalizeAndValidatePath(rootDir, relativePath);
   
   try {
@@ -26,14 +32,28 @@ export async function listDirectory(rootDir: string, relativePath: string): Prom
       
       try {
         const stats = await fs.stat(itemPath);
-        items.push({
+        const item: FileSystemItem = {
           name: entry.name,
           path: `/${relativeItemPath}`,
           type: entry.isDirectory() ? 'directory' : 'file',
           size: stats.size,
           modified: stats.mtime
-        });
+        };
+        
+        // Recursively list subdirectories if enabled and within depth limit
+        if (recursive && entry.isDirectory() && currentDepth < maxDepth) {
+          item.children = await listDirectory(
+            rootDir, 
+            relativeItemPath, 
+            recursive, 
+            maxDepth, 
+            currentDepth + 1
+          );
+        }
+        
+        items.push(item);
       } catch (error) {
+        // Handle permission errors or inaccessible files
         items.push({
           name: entry.name,
           path: `/${relativeItemPath}`,

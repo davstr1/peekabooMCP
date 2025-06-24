@@ -8,10 +8,17 @@ import {
   ErrorCode
 } from '@modelcontextprotocol/sdk/types.js';
 import { listDirectory, readFileContent, normalizeAndValidatePath } from './fs-utils.js';
+import { ServerConfig } from './types.js';
 
 const DEFAULT_ROOT = process.cwd();
+const DEFAULT_CONFIG: ServerConfig = {
+  recursive: true,
+  maxDepth: 10
+};
 
-export function createPeekabooServer(rootDir: string = DEFAULT_ROOT) {
+export function createPeekabooServer(rootDir: string = DEFAULT_ROOT, config: ServerConfig = DEFAULT_CONFIG) {
+  const serverConfig = { ...DEFAULT_CONFIG, ...config };
+  
   const server = new Server(
     {
       name: 'peekaboo-mcp',
@@ -26,13 +33,30 @@ export function createPeekabooServer(rootDir: string = DEFAULT_ROOT) {
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     try {
-      const items = await listDirectory(rootDir, '/');
+      const items = await listDirectory(rootDir, '/', serverConfig.recursive, serverConfig.maxDepth);
+      
+      // Flatten the recursive structure for MCP resources
+      const flattenItems = (items: any[], result: any[] = []): any[] => {
+        for (const item of items) {
+          result.push({
+            uri: `file://${item.path}`,
+            name: item.path,
+            mimeType: item.type === 'file' ? 'text/plain' : 'inode/directory',
+            metadata: {
+              type: item.type,
+              size: item.size,
+              hasChildren: item.children && item.children.length > 0
+            }
+          });
+          if (item.children) {
+            flattenItems(item.children, result);
+          }
+        }
+        return result;
+      };
+      
       return {
-        resources: items.map(item => ({
-          uri: `file://${item.path}`,
-          name: item.name,
-          mimeType: item.type === 'file' ? 'text/plain' : 'inode/directory'
-        }))
+        resources: flattenItems(items)
       };
     } catch (error) {
       throw new McpError(
@@ -83,11 +107,16 @@ export function createPeekabooServer(rootDir: string = DEFAULT_ROOT) {
 
 async function main() {
   const rootDir = process.env.PEEKABOO_ROOT || DEFAULT_ROOT;
-  const server = createPeekabooServer(rootDir);
+  const config: ServerConfig = {
+    recursive: process.env.PEEKABOO_RECURSIVE !== 'false',
+    maxDepth: process.env.PEEKABOO_MAX_DEPTH ? parseInt(process.env.PEEKABOO_MAX_DEPTH) : 10
+  };
+  
+  const server = createPeekabooServer(rootDir, config);
   const transport = new StdioServerTransport();
   
   await server.connect(transport);
-  console.error(`Peekaboo MCP server started with root: ${rootDir}`);
+  console.error(`Peekaboo MCP server started with root: ${rootDir} (recursive: ${config.recursive}, maxDepth: ${config.maxDepth})`);
 }
 
 if (require.main === module) {
