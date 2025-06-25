@@ -8,7 +8,8 @@ import {
   ErrorCode
 } from '@modelcontextprotocol/sdk/types.js';
 import { listDirectory, readFileContent, normalizeAndValidatePath } from './fs-utils.js';
-import { ServerConfig } from './types.js';
+import { ServerConfig, FileSystemItem } from './types.js';
+import { getMimeType } from './mime-types.js';
 
 const DEFAULT_ROOT = process.cwd();
 const DEFAULT_CONFIG: ServerConfig = {
@@ -33,15 +34,16 @@ export function createPeekabooServer(rootDir: string = DEFAULT_ROOT, config: Ser
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     try {
-      const items = await listDirectory(rootDir, '/', serverConfig.recursive, serverConfig.maxDepth);
+      const items = await listDirectory(rootDir, '.', serverConfig.recursive, serverConfig.maxDepth);
       
       // Flatten the recursive structure for MCP resources
-      const flattenItems = (items: any[], result: any[] = []): any[] => {
+      const flattenItems = (items: FileSystemItem[], result: any[] = []): any[] => {
         for (const item of items) {
+          const fullPath = `${rootDir}${item.path}`;
           result.push({
-            uri: `file://${item.path}`,
+            uri: `file://${fullPath}`,
             name: item.path,
-            mimeType: item.type === 'file' ? 'text/plain' : 'inode/directory',
+            mimeType: item.type === 'file' ? getMimeType(item.name) : 'inode/directory',
             metadata: {
               type: item.type,
               size: item.size,
@@ -84,14 +86,14 @@ export function createPeekabooServer(rootDir: string = DEFAULT_ROOT, config: Ser
       return {
         contents: [{
           uri: request.params.uri,
-          mimeType: 'text/plain',
+          mimeType: getMimeType(validPath),
           text: content
         }]
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes('outside root')) {
         throw new McpError(
-          ErrorCode.PermissionDenied,
+          ErrorCode.InvalidRequest,
           'Access denied: Path traversal attempt detected'
         );
       }

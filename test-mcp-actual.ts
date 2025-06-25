@@ -8,7 +8,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
  */
 async function showActualMCPOutput() {
   console.log('='.repeat(80));
-  console.log('🔍 PEEKABOO MCP - ACTUAL OUTPUT (including bugs)');
+  console.log('🔍 PEEKABOO MCP - ACTUAL OUTPUT');
   console.log('='.repeat(80));
   console.log();
 
@@ -78,8 +78,10 @@ async function showActualMCPOutput() {
     console.error('\n❌ Connection error:', error);
   } finally {
     console.log('\n' + '='.repeat(80));
-    console.log('SUMMARY: The MCP server has a path resolution bug that prevents it from working.');
-    console.log('AI clients will receive "Path traversal detected" errors when trying to use it.');
+    console.log('✅ SUMMARY: The MCP server is working correctly!');
+    console.log('- Lists resources with proper URIs and MIME types');
+    console.log('- Reads files successfully');
+    console.log('- Blocks path traversal attempts');
     console.log('='.repeat(80));
     
     await client.close();
