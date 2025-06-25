@@ -1,33 +1,35 @@
-# Development files
+# Source files
 src/
-*.ts
-!dist/**/*.d.ts
-tsconfig.json
-vitest.config.ts
 
 # Test files
-test-*
-mcp-cli.ts
-coverage/
-.coverage/
+dist/__tests__/
+**/*.test.js
+**/*.test.ts
+**/*.test.d.ts
+**/*.test.js.map
+**/*.test.d.ts.map
 
-# Documentation source
-instructions.md
-CLAUDE.md
+# Development files
+test-*.ts
+test-*.js
+mcp-cli.ts
+interactive-cli.ts
+human-cli.ts
+show-*.ts
+
+# Config files
+tsconfig.json
+vitest.config.ts
+.gitignore
+.github/
 
 # Development directories
 dev-docs/
-docs/
+coverage/
 
-# Git and CI
-.git/
-.github/
-.gitignore
-
-# IDE
-.vscode/
-.idea/
-
-# Logs and temp files
-*.log
+# Misc
 .DS_Store
+*.log
+node_modules/
+.vscode/
+CONTRIBUTING.md
