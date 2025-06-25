@@ -14,6 +14,7 @@ import { ServerConfig, FileSystemItem } from './types.js';
 import { getMimeType } from './mime-types.js';
 import { searchByPath, searchContent } from './search-utils.js';
 import { ResourceManager } from './resource-manager.js';
+import { createLogger } from './logger.js';
 import * as path from 'path';
 
 /**
@@ -298,6 +299,8 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
 }
 
 async function main() {
+  const logger = createLogger('peekaboo-mcp');
+  
   try {
     const rootDir = findProjectRoot();
     const config: ServerConfig = {
@@ -309,16 +312,17 @@ async function main() {
     const transport = new StdioServerTransport();
     
     await server.connect(transport);
-    console.error(`Peekaboo MCP server started with root: ${rootDir} (recursive: ${config.recursive}, maxDepth: ${config.maxDepth})`);
+    logger.info(`Peekaboo MCP server started with root: ${rootDir} (recursive: ${config.recursive}, maxDepth: ${config.maxDepth})`);
   } catch (error) {
-    console.error('Failed to start server:', error instanceof Error ? error.message : 'Unknown error');
+    logger.error('Failed to start server:', error instanceof Error ? error.message : 'Unknown error');
     process.exit(1);
   }
 }
 
 if (require.main === module) {
+  const logger = createLogger('peekaboo-mcp');
   main().catch(error => {
-    console.error('Server error:', error);
+    logger.error('Server error:', error);
     process.exit(1);
   });
 }
