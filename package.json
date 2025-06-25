@@ -33,18 +33,22 @@
     "mcp",
     "model-context-protocol",
     "filesystem",
-    "readonly"
+    "readonly",
+    "file-browser",
+    "file-search",
+    "security",
+    "sandboxed"
   ],
   "license": "MIT",
-  "author": "Your Name",
+  "author": "David Stern",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/peekaboo-mcp.git"
+    "url": "https://github.com/davstr1/peekabooMCP.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/peekaboo-mcp/issues"
+    "url": "https://github.com/davstr1/peekabooMCP/issues"
   },
-  "homepage": "https://github.com/yourusername/peekaboo-mcp#readme",
+  "homepage": "https://github.com/davstr1/peekabooMCP#readme",
   "files": [
     "dist/",
     "README.md",

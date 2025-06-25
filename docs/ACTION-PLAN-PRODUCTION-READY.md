@@ -14,7 +14,7 @@ Bring peekaboo-mcp from 88% to 100% production ready by addressing all critical 
 - [ ] Verify all 6 integration tests pass
 
 ### 1.2 Update Package Metadata
-- [ ] Update author field to "David Strasser"
+- [ ] Update author field to "David Stern"
 - [ ] Update repository URL to "https://github.com/davstr1/peekabooMCP.git"
 - [ ] Add relevant keywords for npm discoverability
 - [ ] Add bugs URL field

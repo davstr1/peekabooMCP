@@ -113,7 +113,7 @@ describe('Edge Cases', () => {
     test('prevents circular symlink traversal', async () => {
       // Simulate a directory that links to itself
       vi.mocked(fsUtils.listDirectory).mockImplementation(async (root, dir, recursive, depth) => {
-        if (depth <= 0) return [];
+        if (!depth || depth <= 0) return [];
         
         return [{
           name: 'circular',
