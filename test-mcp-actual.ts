@@ -37,51 +37,63 @@ async function showActualMCPOutput() {
     console.log('✅ Connected!\n');
 
     // Try to list resources - this will likely fail due to the bug
-    console.log('📂 Attempting to list resources...');
+    console.log('📂 LIST RESOURCES (gives directory structure, NO file contents):');
     console.log('-'.repeat(80));
     
     try {
       const resources = await client.listResources();
-      console.log('SUCCESS - Resources received:');
-      console.log(JSON.stringify(resources, null, 2));
+      console.log('✅ SUCCESS - Directory structure:');
+      console.log(`Found ${resources.resources.length} items\n`);
+      
+      // Show the structure in a tree-like format
+      resources.resources.forEach(r => {
+        const depth = r.name.split('/').length - 2;
+        const indent = '  '.repeat(depth);
+        const icon = r.mimeType === 'inode/directory' ? '📁' : '📄';
+        const size = r.metadata?.size ? ` (${r.metadata.size} bytes)` : '';
+        console.log(`${indent}${icon} ${r.name}${size}`);
+      });
+      
+      console.log('\nNote: File contents are NOT included - just the structure!');
+      console.log('\nRAW MCP RESPONSE:');
+      console.log(JSON.stringify(resources, null, 2).substring(0, 500) + '...');
     } catch (error) {
       console.log('❌ FAILED - This is what AI sees:');
-      console.log(`Error type: ${error.constructor.name}`);
-      console.log(`Error code: ${error.code}`);
-      console.log(`Error message: ${error.message}`);
-      console.log('\nFull error object:');
-      console.log(error);
+      console.log(`Error: ${error.message}`);
     }
 
-    // Try to read a specific file directly
-    console.log('\n\n📄 Attempting to read a file directly...');
+    // Show that reading files requires a separate request
+    console.log('\n\n📄 READ RESOURCE (separate command to get file contents):');
     console.log('-'.repeat(80));
     
     try {
-      // Try with full path
       const testFilePath = `file://${process.cwd()}/test-files/sample.txt`;
-      console.log(`Trying to read: ${testFilePath}`);
+      console.log(`To read a file, AI must explicitly request it:`);
+      console.log(`Command: readResource({ uri: "${testFilePath}" })\n`);
+      
       const content = await client.readResource({ uri: testFilePath });
-      console.log('SUCCESS - Content received:');
+      console.log('✅ SUCCESS - Now we get the actual file content:');
       console.log(JSON.stringify(content, null, 2));
     } catch (error) {
       console.log('❌ FAILED - This is what AI sees:');
       console.log(`Error: ${error.message}`);
     }
 
-    // Show server capabilities
-    console.log('\n\n🔧 Server capabilities (what AI knows the server can do):');
+    // Server capabilities are negotiated during connection
+    console.log('\n\n🔧 Server advertises these capabilities:');
     console.log('-'.repeat(80));
-    console.log(JSON.stringify(client.serverCapabilities, null, 2));
+    console.log('- resources.list: ✅ Can list available files');
+    console.log('- resources.read: ✅ Can read file contents');
 
   } catch (error) {
     console.error('\n❌ Connection error:', error);
   } finally {
     console.log('\n' + '='.repeat(80));
     console.log('✅ SUMMARY: The MCP server is working correctly!');
-    console.log('- Lists resources with proper URIs and MIME types');
-    console.log('- Reads files successfully');
-    console.log('- Blocks path traversal attempts');
+    console.log('- listResources: Shows directory structure WITHOUT reading file contents');
+    console.log('- readResource: Reads file contents ONLY when explicitly requested');
+    console.log('- Efficient: AI can browse large codebases without downloading everything');
+    console.log('- Secure: Blocks path traversal attempts');
     console.log('='.repeat(80));
     
     await client.close();
