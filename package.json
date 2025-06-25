@@ -1,6 +1,6 @@
 {
   "name": "peekaboo-mcp",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Minimal MCP server for read-only file system access",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
