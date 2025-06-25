@@ -37,18 +37,43 @@ Now Claude Code can see all the context it needs but can only modify files in yo
      }
    }
    ```
+   
+   **For Claude Code (CLI):**
+   ```bash
+   # One-time setup: Navigate to your project and add peekaboo
+   cd /path/to/your/project
+   claude mcp add peekaboo npx peekaboo-mcp
+   
+   # From now on, just start Claude Code
+   claude
+   # Claude automatically launches peekaboo when it starts!
+   
+   # Optional: Check MCP server status
+   > /mcp
+   # Should show: peekaboo: connected ✓
+   ```
 
    **For Cursor.AI:**
-   Add to `.cursorrules` in your workspace folder:
-   ```
-   Use the peekaboo-mcp server at /path/to/your/project for read-only access to the entire codebase.
-   Only modify files in the current workspace.
+   Create `.cursor/mcp.json` in your home directory or project:
+   ```json
+   {
+     "mcpServers": {
+       "peekaboo": {
+         "command": "npx",
+         "args": ["-y", "peekaboo-mcp"],
+         "cwd": "/path/to/your/project"
+       }
+     }
+   }
    ```
    
-   Then configure MCP in Cursor settings to run:
-   ```bash
-   cd /path/to/your/project && npx peekaboo-mcp
-   ```
+   Or use Cursor Settings UI:
+   - Open Command Palette (Ctrl/Cmd + Shift + P)
+   - Search for "Cursor Settings"
+   - Navigate to MCP Servers section
+   - Add peekaboo-mcp with the project path
+   
+   **Important**: You don't need to manually launch peekaboo! Claude Desktop, Claude Code, and Cursor all automatically start the MCP server when they need it.
 
 3. **Open ONLY the folder you want AI to work on:**
    
