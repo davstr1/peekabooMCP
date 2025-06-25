@@ -142,3 +142,19 @@ See [examples/test-client.js](examples/test-client.js) for a complete example of
 - [Testing Guide](docs/TESTING.md) - How to run and write tests
 - [MCP Response Reference](docs/MCP-RESPONSES.md) - Expected server responses
 - [Example Client](examples/test-client.js) - Working client implementation
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [Contributing](CONTRIBUTING.md) - Development guide
+
+## FAQ
+
+**Q: Can I access files outside my project?**  
+A: No, for security reasons peekaboo-mcp only accesses files within the project where it's installed.
+
+**Q: How do I search for files?**  
+A: Use the `search_path` tool with glob patterns like `*.js` or `src/**/*.ts`.
+
+**Q: What file types are supported?**  
+A: All text files are supported. Binary files are detected but content reading may be limited.
+
+**Q: How do I increase file size limits?**  
+A: Configure the server with custom limits - see the API section above.
