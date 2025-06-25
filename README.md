@@ -14,6 +14,58 @@ Peekaboo-mcp lets you isolate what Claude Code (or any AI agent) can modify whil
 
 Now Claude Code can see all the context it needs but can only modify files in your controlled workspace.
 
+## Quick Start
+
+1. **Install peekaboo-mcp in your project root:**
+   ```bash
+   cd /path/to/your/project
+   npm install peekaboo-mcp
+   ```
+
+2. **Configure your AI tool:**
+
+   **For Claude Desktop:**
+   Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac):
+   ```json
+   {
+     "mcpServers": {
+       "peekaboo": {
+         "command": "npx",
+         "args": ["peekaboo-mcp"],
+         "cwd": "/path/to/your/project"
+       }
+     }
+   }
+   ```
+
+   **For Cursor.AI:**
+   Add to `.cursorrules` in your workspace folder:
+   ```
+   Use the peekaboo-mcp server at /path/to/your/project for read-only access to the entire codebase.
+   Only modify files in the current workspace.
+   ```
+   
+   Then configure MCP in Cursor settings to run:
+   ```bash
+   cd /path/to/your/project && npx peekaboo-mcp
+   ```
+
+3. **Open ONLY the folder you want AI to work on:**
+   
+   Instead of opening your entire project, open just the specific folder you want modified:
+   ```bash
+   # Example: You want AI to work on your React components
+   cursor /path/to/your/project/src/components
+   
+   # Or: You want AI to refactor your API routes
+   cursor /path/to/your/project/api/routes
+   ```
+
+   **Result:** The AI can now:
+   - ✅ Read your ENTIRE project (understands full context)
+   - ✅ Only modify files in `/src/components` (or whatever folder you opened)
+   - ❌ Cannot touch files outside the opened folder
+
 ## Features
 
 - List directory contents recursively by default
