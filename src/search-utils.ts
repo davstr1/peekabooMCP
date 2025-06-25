@@ -27,14 +27,16 @@ export async function searchByPath(
   const results: string[] = [];
   
   // Convert glob pattern to regex
+  // Order matters: we process ? first to avoid breaking regex syntax added later
   let regexPattern = pattern
-    .replace(/\./g, '\\.')
-    .replace(/\*\*/g, '__DOUBLE_STAR__')  // Temporary placeholder
-    .replace(/\*/g, '[^/]*')
-    .replace(/__DOUBLE_STAR__/g, '.*')    // Replace back for greedy match
-    .replace(/\?/g, '[^/]')
+    .replace(/\./g, '\\.')                      // Escape dots: . → \.
+    .replace(/\?/g, '[^/]')                     // ? → match single non-slash char
+    .replace(/\*\*/g, '__DOUBLE_STAR__')        // ** → temporary placeholder
+    .replace(/\*/g, '[^/]*')                    // * → match any non-slash chars
+    .replace(/__DOUBLE_STAR__\//g, '(?:.*/)?')  // **/ → optional path (0+ dirs)
+    .replace(/__DOUBLE_STAR__/g, '.*')          // ** → match anything
     .replace(/\{([^}]+)\}/g, (match, group) => {
-      // Handle {js,ts} style patterns
+      // {a,b,c} → (a|b|c) for alternation
       const options = group.split(',');
       return '(' + options.join('|') + ')';
     });
@@ -47,8 +49,8 @@ export async function searchByPath(
     // Pattern like src/**/*.js - must match from start
     regexPattern = '^/' + regexPattern;
   } else {
-    // Pattern like *.js - match in any directory (but only filename)
-    regexPattern = '[^/]*' + regexPattern.slice(regexPattern.indexOf('[^/]*') + 6);
+    // Pattern like *.js or ?.ts - match filename in any directory
+    regexPattern = '^.*/' + regexPattern;
   }
   
   const regex = new RegExp(regexPattern + '$', 'i');
@@ -107,7 +109,12 @@ export async function searchContent(
             options.include
               .replace(/\./g, '\\.')
               .replace(/\*/g, '.*')
-              .replace(/\?/g, '.'),
+              .replace(/\?/g, '.')
+              .replace(/\{([^}]+)\}/g, (match, group) => {
+                // Handle {js,ts} style patterns
+                const options = group.split(',');
+                return '(' + options.join('|') + ')';
+              }),
             'i'
           );
           if (!includeRegex.test(item.path)) {
