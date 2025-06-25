@@ -201,12 +201,13 @@ describe('search-utils', () => {
       
       vi.mocked(listDirectory).mockResolvedValue(fileStructure);
       
-      vi.mocked(fs.promises.readFile).mockImplementation((path: string) => {
-        const file = mockFiles.find(f => path.includes(f.path.slice(1)));
+      vi.mocked(fs.promises.readFile).mockImplementation((path: any) => {
+        const pathStr = typeof path === 'string' ? path : path.toString();
+        const file = mockFiles.find(f => pathStr.includes(f.path.slice(1)));
         if (file?.content === null) {
           return Promise.reject(new Error('Invalid UTF-8'));
         }
-        return Promise.resolve(file?.content || '');
+        return Promise.resolve(file?.content || '') as any;
       });
     });
 

@@ -1,0 +1,33 @@
+# Development files
+src/
+*.ts
+!dist/**/*.d.ts
+tsconfig.json
+vitest.config.ts
+
+# Test files
+test-*
+mcp-cli.ts
+coverage/
+.coverage/
+
+# Documentation source
+instructions.md
+CLAUDE.md
+
+# Development directories
+dev-docs/
+docs/
+
+# Git and CI
+.git/
+.github/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Logs and temp files
+*.log
+.DS_Store
