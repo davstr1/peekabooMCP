@@ -27,13 +27,31 @@ export async function searchByPath(
   const results: string[] = [];
   
   // Convert glob pattern to regex
-  const regexPattern = pattern
+  let regexPattern = pattern
     .replace(/\./g, '\\.')
-    .replace(/\*\*/g, '.*')  // Must come before single *
+    .replace(/\*\*/g, '__DOUBLE_STAR__')  // Temporary placeholder
     .replace(/\*/g, '[^/]*')
-    .replace(/\?/g, '.');
-    
-  const regex = new RegExp(regexPattern + '$', 'i');  // Add $ for end of string
+    .replace(/__DOUBLE_STAR__/g, '.*')    // Replace back for greedy match
+    .replace(/\?/g, '[^/]')
+    .replace(/\{([^}]+)\}/g, (match, group) => {
+      // Handle {js,ts} style patterns
+      const options = group.split(',');
+      return '(' + options.join('|') + ')';
+    });
+  
+  // Handle different pattern types
+  if (pattern.startsWith('**/')) {
+    // Pattern like **/*.js - match anywhere
+    regexPattern = regexPattern;
+  } else if (pattern.includes('/')) {
+    // Pattern like src/**/*.js - must match from start
+    regexPattern = '^/' + regexPattern;
+  } else {
+    // Pattern like *.js - match in any directory (but only filename)
+    regexPattern = '[^/]*' + regexPattern.slice(regexPattern.indexOf('[^/]*') + 6);
+  }
+  
+  const regex = new RegExp(regexPattern + '$', 'i');
   
   const searchItems = (items: FileSystemItem[]) => {
     for (const item of items) {
