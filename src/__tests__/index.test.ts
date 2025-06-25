@@ -2,8 +2,8 @@ import { describe, test, expect } from 'vitest';
 import { createPeekabooServer } from '../index.js';
 
 describe('createPeekabooServer', () => {
-  test('creates server with default configuration', () => {
-    const server = createPeekabooServer();
+  test('creates server with root directory', () => {
+    const server = createPeekabooServer('/test/root');
     expect(server).toBeDefined();
     expect(server.connect).toBeDefined();
   });
@@ -22,7 +22,7 @@ describe('createPeekabooServer', () => {
   });
 
   test('server has required methods', () => {
-    const server = createPeekabooServer();
+    const server = createPeekabooServer('/test/root');
     expect(typeof server.connect).toBe('function');
     // The server object from MCP SDK has these methods
   });

@@ -13,14 +13,37 @@ import { listDirectory, readFileContent, normalizeAndValidatePath } from './fs-u
 import { ServerConfig, FileSystemItem } from './types.js';
 import { getMimeType } from './mime-types.js';
 import { searchByPath, searchContent } from './search-utils.js';
+import * as path from 'path';
 
-const DEFAULT_ROOT = process.cwd();
+/**
+ * Automatically detects the project root by finding the parent directory
+ * of node_modules. This ensures the MCP server only accesses files within
+ * the project where it's installed, preventing security vulnerabilities.
+ * 
+ * @returns The absolute path to the project root
+ * @throws Error if not running from within node_modules
+ */
+export function findProjectRoot(): string {
+  // MCP servers always run from node_modules when properly installed
+  const nodeModulesIndex = __dirname.lastIndexOf(`${path.sep}node_modules${path.sep}`);
+  
+  if (nodeModulesIndex === -1) {
+    throw new Error(
+      'peekaboo-mcp must be run as an installed npm package. ' +
+      'Direct execution is not supported for security reasons.'
+    );
+  }
+  
+  // Extract project root (everything before node_modules)
+  return __dirname.substring(0, nodeModulesIndex);
+}
+
 const DEFAULT_CONFIG: ServerConfig = {
   recursive: true,
   maxDepth: 10
 };
 
-export function createPeekabooServer(rootDir: string = DEFAULT_ROOT, config: ServerConfig = DEFAULT_CONFIG) {
+export function createPeekabooServer(rootDir: string, config: ServerConfig = DEFAULT_CONFIG) {
   const serverConfig = { ...DEFAULT_CONFIG, ...config };
   
   const server = new Server(
@@ -235,17 +258,22 @@ export function createPeekabooServer(rootDir: string = DEFAULT_ROOT, config: Ser
 }
 
 async function main() {
-  const rootDir = process.env.PEEKABOO_ROOT || DEFAULT_ROOT;
-  const config: ServerConfig = {
-    recursive: process.env.PEEKABOO_RECURSIVE !== 'false',
-    maxDepth: process.env.PEEKABOO_MAX_DEPTH ? parseInt(process.env.PEEKABOO_MAX_DEPTH) : 10
-  };
-  
-  const server = createPeekabooServer(rootDir, config);
-  const transport = new StdioServerTransport();
-  
-  await server.connect(transport);
-  console.error(`Peekaboo MCP server started with root: ${rootDir} (recursive: ${config.recursive}, maxDepth: ${config.maxDepth})`);
+  try {
+    const rootDir = findProjectRoot();
+    const config: ServerConfig = {
+      recursive: process.env.PEEKABOO_RECURSIVE !== 'false',
+      maxDepth: process.env.PEEKABOO_MAX_DEPTH ? parseInt(process.env.PEEKABOO_MAX_DEPTH) : 10
+    };
+    
+    const server = createPeekabooServer(rootDir, config);
+    const transport = new StdioServerTransport();
+    
+    await server.connect(transport);
+    console.error(`Peekaboo MCP server started with root: ${rootDir} (recursive: ${config.recursive}, maxDepth: ${config.maxDepth})`);
+  } catch (error) {
+    console.error('Failed to start server:', error instanceof Error ? error.message : 'Unknown error');
+    process.exit(1);
+  }
 }
 
 if (require.main === module) {

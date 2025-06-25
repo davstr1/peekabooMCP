@@ -8,7 +8,7 @@ Minimal Model Context Protocol (MCP) server for read-only file system access.
 - Read file contents
 - Strict read-only access (no write/edit/delete operations)
 - Path traversal protection
-- Configurable root directory
+- Automatic project root detection (accesses only the project where installed)
 - Configurable recursion depth
 
 ## Installation
@@ -22,11 +22,8 @@ npm install peekaboo-mcp
 ### As a standalone server
 
 ```bash
-# Use current directory as root (recursive by default)
+# Run from your project (automatically detects project root)
 npx peekaboo-mcp
-
-# Use custom root directory
-PEEKABOO_ROOT=/path/to/allowed/directory npx peekaboo-mcp
 
 # Disable recursive listing
 PEEKABOO_RECURSIVE=false npx peekaboo-mcp
@@ -35,17 +32,22 @@ PEEKABOO_RECURSIVE=false npx peekaboo-mcp
 PEEKABOO_MAX_DEPTH=5 npx peekaboo-mcp
 ```
 
+**Note**: peekaboo-mcp automatically detects and uses the project root where it's installed. It cannot access files outside of this project for security reasons.
+
 ### As a module
 
 ```typescript
-import { createPeekabooServer } from 'peekaboo-mcp';
+import { createPeekabooServer, findProjectRoot } from 'peekaboo-mcp';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
+// Automatically detect project root
+const rootDir = findProjectRoot();
+
 // Default: recursive listing enabled, max depth 10
-const server = createPeekabooServer('/path/to/root');
+const server = createPeekabooServer(rootDir);
 
 // Or with custom config
-const server = createPeekabooServer('/path/to/root', {
+const server = createPeekabooServer(rootDir, {
   recursive: false,  // Disable recursive listing
   maxDepth: 5       // Limit recursion depth
 });
@@ -63,10 +65,7 @@ Add to your MCP client configuration:
   "mcpServers": {
     "peekaboo": {
       "command": "npx",
-      "args": ["peekaboo-mcp"],
-      "env": {
-        "PEEKABOO_ROOT": "/path/to/allowed/directory"
-      }
+      "args": ["peekaboo-mcp"]
     }
   }
 }
@@ -75,8 +74,10 @@ Add to your MCP client configuration:
 ## Security
 
 - All file access is strictly read-only
-- Path traversal above the configured root is blocked
+- Automatic project root detection prevents access outside the installed project
+- Path traversal above the project root is blocked
 - No write, edit, or delete operations are supported
+- No user-configurable root directory (prevents manipulation by LLMs or malicious actors)
 
 ## API
 
@@ -90,6 +91,7 @@ Resources are accessed via `file://` URIs relative to the configured root.
 ## Configuration
 
 Environment variables:
-- `PEEKABOO_ROOT`: Root directory for file access (default: current directory)
 - `PEEKABOO_RECURSIVE`: Enable recursive listing (default: true, set to 'false' to disable)
 - `PEEKABOO_MAX_DEPTH`: Maximum recursion depth (default: 10)
+
+The root directory is automatically detected based on where peekaboo-mcp is installed and cannot be overridden.
