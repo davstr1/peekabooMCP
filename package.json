@@ -10,7 +10,9 @@
     "start": "node dist/index.js",
     "test": "tsx test-mcp-actual.ts",
     "test:full": "tsx test-mcp-output.ts",
-    "test:old": "tsx test-client.ts"
+    "test:old": "tsx test-client.ts",
+    "cli": "tsx interactive-cli.ts",
+    "human": "tsx human-cli.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4"
