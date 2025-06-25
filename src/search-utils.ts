@@ -87,6 +87,7 @@ export async function searchContent(
     include?: string;
     ignoreCase?: boolean;
     maxResults?: number;
+    maxFilesToSearch?: number;
   } = {}
 ): Promise<SearchResult[]> {
   const { listDirectory } = await import('./fs-utils.js');
@@ -95,6 +96,8 @@ export async function searchContent(
   const results: SearchResult[] = [];
   const regex = new RegExp(query, options.ignoreCase ? 'gi' : 'g');
   let resultCount = 0;
+  let filesSearched = 0;
+  const maxFilesToSearch = options.maxFilesToSearch || 1000;
   
   const searchItems = async (items: FileSystemItem[]) => {
     for (const item of items) {
@@ -103,6 +106,11 @@ export async function searchContent(
       }
       
       if (item.type === 'file') {
+        // Check file search limit
+        if (filesSearched >= maxFilesToSearch) {
+          break;
+        }
+        
         // Check if file matches include pattern
         if (options.include) {
           const includeRegex = new RegExp(
@@ -124,6 +132,14 @@ export async function searchContent(
         
         try {
           const fullPath = path.join(rootDir, item.path.slice(1)); // Remove leading /
+          
+          // Check file size before reading
+          const stats = await fs.stat(fullPath);
+          if (stats.size > 1024 * 1024) { // Skip files > 1MB
+            continue;
+          }
+          
+          filesSearched++;
           const content = await fs.readFile(fullPath, 'utf-8');
           const lines = content.split('\n');
           const matches: Array<{ line: number; content: string }> = [];

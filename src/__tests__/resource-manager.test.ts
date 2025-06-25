@@ -23,7 +23,7 @@ describe('ResourceManager', () => {
       });
       
       await expect(rm.withTimeout(slowOperation, 'test-operation'))
-        .rejects.toThrow('timed out after 100ms');
+        .rejects.toThrow('Operation timed out after 100ms');
     });
     
     test('returns operation directly when no timeout configured', async () => {
@@ -43,7 +43,7 @@ describe('ResourceManager', () => {
       
       // Custom timeout of 100ms should fail
       await expect(rm.withTimeout(slowOperation, 'test-operation', 100))
-        .rejects.toThrow('timed out after 100ms');
+        .rejects.toThrow('Operation timed out after 100ms');
     });
   });
   

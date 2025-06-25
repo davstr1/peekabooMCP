@@ -30,7 +30,7 @@ export class ResourceManager {
         setTimeout(() => {
           reject(new McpError(
             ErrorCode.InternalError,
-            `Operation '${operationName}' timed out after ${timeout}ms`
+            `Operation timed out after ${timeout}ms`
           ));
         }, timeout);
       })
@@ -46,7 +46,7 @@ export class ResourceManager {
     if (size > this.limits.maxFileSize) {
       throw new McpError(
         ErrorCode.InvalidRequest,
-        `File '${filePath}' size (${size} bytes) exceeds maximum allowed size (${this.limits.maxFileSize} bytes)`
+        `File size (${size} bytes) exceeds maximum allowed size (${this.limits.maxFileSize} bytes)`
       );
     }
   }

@@ -10,7 +10,8 @@ vi.mock('../fs-utils.js', () => ({
 // Mock fs for searchContent
 vi.mock('fs', () => ({
   promises: {
-    readFile: vi.fn()
+    readFile: vi.fn(),
+    stat: vi.fn()
   }
 }));
 
@@ -208,6 +209,14 @@ describe('search-utils', () => {
           return Promise.reject(new Error('Invalid UTF-8'));
         }
         return Promise.resolve(file?.content || '') as any;
+      });
+      
+      vi.mocked(fs.promises.stat).mockImplementation((path: any) => {
+        const pathStr = typeof path === 'string' ? path : path.toString();
+        const file = mockFiles.find(f => pathStr.includes(f.path.slice(1)));
+        // Mock file size based on content length (or small default)
+        const size = file?.content ? file.content.length : 100;
+        return Promise.resolve({ size } as any);
       });
     });
 

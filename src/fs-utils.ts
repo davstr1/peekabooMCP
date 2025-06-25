@@ -96,7 +96,7 @@ export async function listDirectory(
     return items;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error(`Directory not found: ${relativePath}`);
+      throw new Error('Directory not found');
     }
     if ((error as NodeJS.ErrnoException).code === 'ENOTDIR') {
       throw new Error(`Not a directory: ${relativePath}`);
@@ -117,7 +117,7 @@ export async function readFileContent(filePath: string, resourceManager?: Resour
     return content;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error(`File not found: ${filePath}`);
+      throw new Error('File not found');
     }
     if ((error as NodeJS.ErrnoException).code === 'EISDIR') {
       throw new Error(`Cannot read directory as file: ${filePath}`);

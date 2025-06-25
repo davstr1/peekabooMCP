@@ -315,15 +315,7 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
                 version: '2.0.0',
                 uptime: uptime,
                 uptimeHuman: `${Math.floor(uptime / 1000)}s`,
-                metrics: metricsData.summary,
-                config: {
-                  rootDir,
-                  recursive: serverConfig.recursive,
-                  maxDepth: serverConfig.maxDepth,
-                  timeout: serverConfig.timeout,
-                  maxFileSize: serverConfig.maxFileSize,
-                  maxTotalSize: serverConfig.maxTotalSize
-                }
+                metrics: metricsData.summary
               }, null, 2)
             }
           ]
