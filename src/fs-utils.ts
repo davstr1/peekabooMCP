@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { FileSystemItem } from './types.js';
+import { ResourceManager } from './resource-manager.js';
 
 export function normalizeAndValidatePath(rootDir: string, requestedPath: string): string {
   // Reject obvious traversal patterns before resolution
@@ -40,7 +41,8 @@ export async function listDirectory(
   relativePath: string, 
   recursive: boolean = true,
   maxDepth: number = 10,
-  currentDepth: number = 0
+  currentDepth: number = 0,
+  resourceManager?: ResourceManager
 ): Promise<FileSystemItem[]> {
   const fullPath = normalizeAndValidatePath(rootDir, relativePath);
   
@@ -54,6 +56,12 @@ export async function listDirectory(
       
       try {
         const stats = await fs.stat(itemPath);
+        
+        // Track size for resource management
+        if (resourceManager && stats.size) {
+          resourceManager.trackSize(stats.size);
+        }
+        
         const item: FileSystemItem = {
           name: entry.name,
           path: `/${relativeItemPath}`,
@@ -69,7 +77,8 @@ export async function listDirectory(
             relativeItemPath, 
             recursive, 
             maxDepth, 
-            currentDepth + 1
+            currentDepth + 1,
+            resourceManager
           );
         }
         
@@ -96,8 +105,14 @@ export async function listDirectory(
   }
 }
 
-export async function readFileContent(filePath: string): Promise<string> {
+export async function readFileContent(filePath: string, resourceManager?: ResourceManager): Promise<string> {
   try {
+    // Check file size before reading
+    if (resourceManager) {
+      const stats = await fs.stat(filePath);
+      resourceManager.checkFileSize(stats.size, filePath);
+    }
+    
     const content = await fs.readFile(filePath, 'utf-8');
     return content;
   } catch (error) {

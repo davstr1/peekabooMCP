@@ -7,7 +7,21 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules', 'dist', 'test-*.ts', '**/types.ts', '*.config.ts']
+      include: ['src/**/*.ts'],
+      exclude: [
+        'node_modules', 
+        'dist', 
+        '**/test-*.ts', 
+        '**/__tests__/**',
+        '**/types.ts', 
+        '*.config.ts',
+        '*.cli.ts',
+        '*-cli.ts',
+        'human-cli.ts',
+        'interactive-cli.ts',
+        'mcp-cli.ts',
+        'human-mcp-output.ts'
+      ]
     }
   }
 })

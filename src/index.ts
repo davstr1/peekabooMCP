@@ -13,6 +13,7 @@ import { listDirectory, readFileContent, normalizeAndValidatePath } from './fs-u
 import { ServerConfig, FileSystemItem } from './types.js';
 import { getMimeType } from './mime-types.js';
 import { searchByPath, searchContent } from './search-utils.js';
+import { ResourceManager } from './resource-manager.js';
 import * as path from 'path';
 
 /**
@@ -40,11 +41,21 @@ export function findProjectRoot(): string {
 
 const DEFAULT_CONFIG: ServerConfig = {
   recursive: true,
-  maxDepth: 10
+  maxDepth: 10,
+  timeout: 30000, // 30 seconds default timeout
+  maxFileSize: 10 * 1024 * 1024, // 10MB default max file size
+  maxTotalSize: 100 * 1024 * 1024 // 100MB default max total size
 };
 
 export function createPeekabooServer(rootDir: string, config: ServerConfig = DEFAULT_CONFIG) {
   const serverConfig = { ...DEFAULT_CONFIG, ...config };
+  
+  // Create resource manager with configured limits
+  const resourceManager = new ResourceManager({
+    timeout: serverConfig.timeout,
+    maxFileSize: serverConfig.maxFileSize,
+    maxTotalSize: serverConfig.maxTotalSize
+  });
   
   const server = new Server(
     {
@@ -61,7 +72,22 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     try {
-      const items = await listDirectory(rootDir, '.', serverConfig.recursive, serverConfig.maxDepth);
+      // Reset size tracking for new request
+      resourceManager.resetSize();
+      
+      const listOperation = listDirectory(
+        rootDir, 
+        '.', 
+        serverConfig.recursive, 
+        serverConfig.maxDepth,
+        0,
+        resourceManager
+      );
+      
+      const items = await resourceManager.withTimeout(
+        listOperation,
+        'listDirectory'
+      );
       
       // Flatten the recursive structure for MCP resources
       const flattenItems = (items: FileSystemItem[], result: any[] = []): any[] => {
@@ -108,7 +134,12 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
     
     try {
       const validPath = normalizeAndValidatePath(rootDir, requestedPath);
-      const content = await readFileContent(validPath);
+      
+      const readOperation = readFileContent(validPath, resourceManager);
+      const content = await resourceManager.withTimeout(
+        readOperation,
+        'readFileContent'
+      );
       
       return {
         contents: [{
@@ -186,7 +217,11 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
           throw new McpError(ErrorCode.InvalidRequest, 'Pattern is required');
         }
 
-        const paths = await searchByPath(rootDir, pattern);
+        const searchOperation = searchByPath(rootDir, pattern);
+        const paths = await resourceManager.withTimeout(
+          searchOperation,
+          'searchByPath'
+        );
         
         return {
           content: [
@@ -206,11 +241,16 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
           throw new McpError(ErrorCode.InvalidRequest, 'Query is required');
         }
 
-        const results = await searchContent(rootDir, query, {
+        const searchOperation = searchContent(rootDir, query, {
           include: args?.include as string,
           ignoreCase: args?.ignoreCase !== false,
           maxResults: 20
         });
+        
+        const results = await resourceManager.withTimeout(
+          searchOperation,
+          'searchContent'
+        );
 
         if (results.length === 0) {
           return {
