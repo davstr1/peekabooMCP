@@ -4,12 +4,15 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
   McpError,
   ErrorCode
 } from '@modelcontextprotocol/sdk/types.js';
 import { listDirectory, readFileContent, normalizeAndValidatePath } from './fs-utils.js';
 import { ServerConfig, FileSystemItem } from './types.js';
 import { getMimeType } from './mime-types.js';
+import { searchByPath, searchContent } from './search-utils.js';
 
 const DEFAULT_ROOT = process.cwd();
 const DEFAULT_CONFIG: ServerConfig = {
@@ -27,7 +30,8 @@ export function createPeekabooServer(rootDir: string = DEFAULT_ROOT, config: Ser
     },
     {
       capabilities: {
-        resources: {}
+        resources: {},
+        tools: {}
       }
     }
   );
@@ -100,6 +104,129 @@ export function createPeekabooServer(rootDir: string = DEFAULT_ROOT, config: Ser
       throw new McpError(
         ErrorCode.InternalError,
         `Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  });
+
+  // List available tools
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    return {
+      tools: [
+        {
+          name: 'search_path',
+          description: 'Search for files and directories by name pattern',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              pattern: {
+                type: 'string',
+                description: 'Search pattern (supports * and ** wildcards, e.g., "*.js", "**/test/*.json")'
+              }
+            },
+            required: ['pattern']
+          }
+        },
+        {
+          name: 'search_content',
+          description: 'Search for content within files',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Text to search for in file contents'
+              },
+              include: {
+                type: 'string',
+                description: 'Optional file pattern to search in (e.g., "*.js", "*.md")'
+              },
+              ignoreCase: {
+                type: 'boolean',
+                description: 'Case-insensitive search (default: true)'
+              }
+            },
+            required: ['query']
+          }
+        }
+      ]
+    };
+  });
+
+  // Handle tool calls
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const { name, arguments: args } = request.params;
+
+    try {
+      if (name === 'search_path') {
+        const pattern = args?.pattern as string;
+        if (!pattern) {
+          throw new McpError(ErrorCode.InvalidRequest, 'Pattern is required');
+        }
+
+        const paths = await searchByPath(rootDir, pattern);
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: paths.length > 0 
+                ? `Found ${paths.length} matches:\n${paths.join('\n')}`
+                : 'No files found matching the pattern'
+            }
+          ]
+        };
+      }
+
+      if (name === 'search_content') {
+        const query = args?.query as string;
+        if (!query) {
+          throw new McpError(ErrorCode.InvalidRequest, 'Query is required');
+        }
+
+        const results = await searchContent(rootDir, query, {
+          include: args?.include as string,
+          ignoreCase: args?.ignoreCase !== false,
+          maxResults: 20
+        });
+
+        if (results.length === 0) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'No matches found'
+              }
+            ]
+          };
+        }
+
+        let output = `Found matches in ${results.length} files:\n\n`;
+        for (const result of results) {
+          output += `📄 ${result.path}\n`;
+          if (result.matches) {
+            for (const match of result.matches) {
+              output += `  Line ${match.line}: ${match.content}\n`;
+            }
+          }
+          output += '\n';
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: output
+            }
+          ]
+        };
+      }
+
+      throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+    } catch (error) {
+      if (error instanceof McpError) throw error;
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   });

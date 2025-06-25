@@ -82,17 +82,27 @@ async function showActualMCPOutput() {
     // Server capabilities are negotiated during connection
     console.log('\n\n🔧 Server advertises these capabilities:');
     console.log('-'.repeat(80));
-    console.log('- resources.list: ✅ Can list available files');
-    console.log('- resources.read: ✅ Can read file contents');
+    console.log('RESOURCES:');
+    console.log('- resources.list: ✅ Browse directory structure');
+    console.log('- resources.read: ✅ Read specific file contents');
+    console.log('\nTOOLS:');
+    console.log('- search_path: ✅ Find files by name pattern (*.ts, **/*.json)');
+    console.log('- search_content: ✅ Search text within files (grep-like)');
 
   } catch (error) {
     console.error('\n❌ Connection error:', error);
   } finally {
     console.log('\n' + '='.repeat(80));
     console.log('✅ SUMMARY: The MCP server is working correctly!');
+    console.log('\nRESOURCES (what AI was already using):');
     console.log('- listResources: Shows directory structure WITHOUT reading file contents');
     console.log('- readResource: Reads file contents ONLY when explicitly requested');
-    console.log('- Efficient: AI can browse large codebases without downloading everything');
+    console.log('\nNEW TOOLS (more powerful than terminal commands):');
+    console.log('- search_path: Find files instantly by pattern');
+    console.log('- search_content: Search inside files with grep-like functionality');
+    console.log('\nBENEFITS:');
+    console.log('- Efficient: Browse large codebases without downloading everything');
+    console.log('- Fast: No multiple round trips like with terminal ls/grep');
     console.log('- Secure: Blocks path traversal attempts');
     console.log('='.repeat(80));
     
