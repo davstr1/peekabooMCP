@@ -2,6 +2,18 @@
 
 Minimal Model Context Protocol (MCP) server for read-only file system access.
 
+## The Problem
+
+AI coding assistants often make broader changes than intended. You ask them to fix a simple bug, and they refactor half your codebase. This happens because they have full read/write access to everything in your project directory.
+
+## The Solution
+
+Peekaboo-mcp lets you isolate what AI can modify while still giving it visibility into your entire codebase. Simply:
+1. Open your editor in a small, dedicated workspace folder
+2. Let peekaboo-mcp provide read-only access to your actual project.
+
+Now AI assistants can see all the context they need but can only modify files in your controlled workspace.
+
 ## Features
 
 - List directory contents recursively by default
