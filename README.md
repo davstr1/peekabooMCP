@@ -5,11 +5,15 @@ Minimal Model Context Protocol (MCP) server for read-only file system access.
 ## Features
 
 - List directory contents recursively by default
-- Read file contents
+- Read file contents with MIME type detection
+- Search files by name pattern (glob support)
+- Search content within files
 - Strict read-only access (no write/edit/delete operations)
 - Path traversal protection
 - Automatic project root detection (accesses only the project where installed)
 - Configurable recursion depth
+- Resource management (timeouts, file size limits)
+- Comprehensive test coverage
 
 ## Installation
 
@@ -48,8 +52,11 @@ const server = createPeekabooServer(rootDir);
 
 // Or with custom config
 const server = createPeekabooServer(rootDir, {
-  recursive: false,  // Disable recursive listing
-  maxDepth: 5       // Limit recursion depth
+  recursive: false,     // Disable recursive listing
+  maxDepth: 5,         // Limit recursion depth
+  timeout: 60000,      // 60 second timeout (default: 30s)
+  maxFileSize: 5 * 1024 * 1024,  // 5MB max file size (default: 10MB)
+  maxTotalSize: 50 * 1024 * 1024 // 50MB max total size (default: 100MB)
 });
 
 const transport = new StdioServerTransport();
@@ -81,12 +88,23 @@ Add to your MCP client configuration:
 
 ## API
 
-The server exposes two MCP resources:
+### Resources
 
 1. **List Resources**: Returns all files and directories from the root (recursive by default)
 2. **Read Resource**: Returns the content of a specific file
 
 Resources are accessed via `file://` URIs relative to the configured root.
+
+### Tools
+
+1. **search_path**: Search for files and directories by name pattern
+   - Supports wildcards: `*` (any characters), `**` (any directories), `?` (single character)
+   - Examples: `*.ts`, `src/**/*.js`, `test-?.md`
+
+2. **search_content**: Search for content within files
+   - Optional file pattern filter
+   - Case-insensitive by default
+   - Returns matching lines with line numbers
 
 ## Configuration
 
@@ -95,3 +113,32 @@ Environment variables:
 - `PEEKABOO_MAX_DEPTH`: Maximum recursion depth (default: 10)
 
 The root directory is automatically detected based on where peekaboo-mcp is installed and cannot be overridden.
+
+## Resource Limits
+
+Default limits (configurable via ServerConfig):
+- **Timeout**: 30 seconds per operation
+- **Max file size**: 10MB per file
+- **Max total size**: 100MB for directory listings
+
+Operations that exceed these limits will fail with appropriate error messages.
+
+## Testing
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+See [docs/TESTING.md](docs/TESTING.md) for detailed testing information.
+
+## Example Client
+
+See [examples/test-client.js](examples/test-client.js) for a complete example of using peekaboo-mcp with the MCP SDK.
+
+## Documentation
+
+- [Testing Guide](docs/TESTING.md) - How to run and write tests
+- [MCP Response Reference](docs/MCP-RESPONSES.md) - Expected server responses
+- [Example Client](examples/test-client.js) - Working client implementation
