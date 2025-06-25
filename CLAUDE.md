@@ -1,3 +1,6 @@
+NEVER FUCKING SAY AGAIN "You're absolutely right"
+
+
 # Gigarad Backend - AI Context
 
 ## Project Overview
