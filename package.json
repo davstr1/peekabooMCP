@@ -8,7 +8,10 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
-    "test": "tsx test-mcp-actual.ts",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "test:manual": "tsx test-mcp-actual.ts",
     "test:full": "tsx test-mcp-output.ts",
     "test:old": "tsx test-client.ts",
     "cli": "tsx mcp-cli.ts"
@@ -17,10 +20,17 @@
     "@modelcontextprotocol/sdk": "^1.0.4"
   },
   "devDependencies": {
-    "@types/node": "^22.5.0",
+    "@types/node": "^22.15.33",
+    "@vitest/coverage-v8": "^3.2.4",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.4"
   },
-  "keywords": ["mcp", "model-context-protocol", "filesystem", "readonly"],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "filesystem",
+    "readonly"
+  ],
   "license": "MIT"
 }

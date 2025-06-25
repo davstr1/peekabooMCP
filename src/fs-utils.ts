@@ -3,12 +3,34 @@ import path from 'path';
 import { FileSystemItem } from './types.js';
 
 export function normalizeAndValidatePath(rootDir: string, requestedPath: string): string {
+  // Reject obvious traversal patterns before resolution
+  const dangerousPatterns = [
+    /\.\.[\/\\]/,           // ../ or ..\
+    /^\.\.$/, // Just ..
+    /^\.\.\//, // Starts with ../
+    /\x00/,                 // Null bytes
+    /^[a-zA-Z]:[\\\/]/,     // Windows absolute paths like C:\ or C:/
+    /^[\/\\]/,              // Absolute paths starting with / or \
+    /%2e%2e/i,              // URL encoded dots
+    /\.\.\./,               // Three or more dots
+    /[\/\\]\.\.[\/\\]/      // /../ or \..\
+  ];
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(requestedPath)) {
+      throw new Error('Path traversal detected: Access outside root directory is not allowed');
+    }
+  }
+
   const normalizedRoot = path.resolve(rootDir);
   const resolvedPath = path.resolve(normalizedRoot, requestedPath);
   
+  // Double-check after resolution
   if (!resolvedPath.startsWith(normalizedRoot)) {
     throw new Error('Path traversal detected: Access outside root directory is not allowed');
   }
+  
+  // No need for additional .. check since we already validated the resolved path
   
   return resolvedPath;
 }
