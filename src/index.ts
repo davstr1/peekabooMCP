@@ -15,6 +15,7 @@ import { getMimeType } from './mime-types.js';
 import { searchByPath, searchContent } from './search-utils.js';
 import { ResourceManager } from './resource-manager.js';
 import { createLogger } from './logger.js';
+import { MetricsCollector } from './metrics.js';
 import * as path from 'path';
 
 /**
@@ -48,8 +49,11 @@ const DEFAULT_CONFIG: ServerConfig = {
   maxTotalSize: 100 * 1024 * 1024 // 100MB default max total size
 };
 
+const serverStartTime = Date.now();
+
 export function createPeekabooServer(rootDir: string, config: ServerConfig = DEFAULT_CONFIG) {
   const serverConfig = { ...DEFAULT_CONFIG, ...config };
+  const metrics = new MetricsCollector();
   
   // Create resource manager with configured limits
   const resourceManager = new ResourceManager({
@@ -61,7 +65,7 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
   const server = new Server(
     {
       name: 'peekaboo-mcp',
-      version: '1.0.0',
+      version: '2.0.0',
     },
     {
       capabilities: {
@@ -72,6 +76,7 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
   );
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    const metric = metrics.startOperation('list_resources');
     try {
       // Reset size tracking for new request
       resourceManager.resetSize();
@@ -111,10 +116,14 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
         return result;
       };
       
-      return {
+      const result = {
         resources: flattenItems(items)
       };
+      
+      metrics.endOperation(metric, true);
+      return result;
     } catch (error) {
+      metrics.endOperation(metric, false, error instanceof Error ? error.message : 'Unknown error');
       throw new McpError(
         ErrorCode.InternalError,
         `Failed to list resources: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -202,6 +211,14 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
             },
             required: ['query']
           }
+        },
+        {
+          name: 'health_check',
+          description: 'Get server health status and metrics',
+          inputSchema: {
+            type: 'object',
+            properties: {}
+          }
         }
       ]
     };
@@ -280,6 +297,34 @@ export function createPeekabooServer(rootDir: string, config: ServerConfig = DEF
             {
               type: 'text',
               text: output
+            }
+          ]
+        };
+      }
+      
+      if (name === 'health_check') {
+        const uptime = Date.now() - serverStartTime;
+        const metricsData = metrics.getMetrics();
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                status: 'healthy',
+                version: '2.0.0',
+                uptime: uptime,
+                uptimeHuman: `${Math.floor(uptime / 1000)}s`,
+                metrics: metricsData.summary,
+                config: {
+                  rootDir,
+                  recursive: serverConfig.recursive,
+                  maxDepth: serverConfig.maxDepth,
+                  timeout: serverConfig.timeout,
+                  maxFileSize: serverConfig.maxFileSize,
+                  maxTotalSize: serverConfig.maxTotalSize
+                }
+              }, null, 2)
             }
           ]
         };
