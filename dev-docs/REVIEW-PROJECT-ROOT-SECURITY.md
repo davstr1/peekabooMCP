@@ -20,33 +20,22 @@ Remove configurable `PEEKABOO_ROOT` and automatically detect the project root:
 
 ```typescript
 function findProjectRoot(): string {
-  let currentDir = __dirname;
+  // MCP servers always run from node_modules
+  const nodeModulesIndex = __dirname.lastIndexOf(`${path.sep}node_modules${path.sep}`);
   
-  // If running from node_modules, go up to project root
-  const nodeModulesIndex = currentDir.lastIndexOf(`${path.sep}node_modules${path.sep}`);
-  if (nodeModulesIndex !== -1) {
-    // Extract everything before node_modules
-    currentDir = currentDir.substring(0, nodeModulesIndex);
+  if (nodeModulesIndex === -1) {
+    throw new Error('peekaboo-mcp must be run as an installed npm package');
   }
   
-  // Verify we found a valid project root
-  const packageJsonPath = path.join(currentDir, 'package.json');
-  if (fs.existsSync(packageJsonPath)) {
-    try {
-      const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-      // Don't use our own package.json
-      if (pkg.name !== 'peekaboo-mcp') {
-        return currentDir;
-      }
-    } catch {
-      // If can't read package.json, still use this directory
-    }
-  }
-  
-  // Fallback to current working directory
-  return process.cwd();
+  // Extract project root (everything before node_modules)
+  return __dirname.substring(0, nodeModulesIndex);
 }
 ```
+
+This is much simpler because:
+- MCP servers are ALWAYS installed via npm
+- They ALWAYS run from within node_modules
+- The path structure is completely predictable
 
 ### Security Benefits
 
@@ -62,19 +51,30 @@ function findProjectRoot(): string {
    - Falls back to `process.cwd()` for direct execution
    - Never allows access outside detected project root
 
-### Edge Cases Handled
+### Simplified Implementation
 
-1. **Global Installation**
-   - Falls back to current working directory
-   - Still secure - only accesses where user is working
+Since peekaboo-mcp is an npm package that runs as an MCP server, it will ALWAYS be executed from within node_modules. This simplifies our approach:
 
-2. **Monorepo/Workspaces**
-   - Finds nearest package.json above node_modules
-   - Correctly scopes to the specific package
+```typescript
+function findProjectRoot(): string {
+  // We're always in node_modules when running as MCP
+  const nodeModulesIndex = __dirname.lastIndexOf(`${path.sep}node_modules${path.sep}`);
+  
+  if (nodeModulesIndex === -1) {
+    // This should never happen in production
+    throw new Error('peekaboo-mcp must be run as an installed npm package');
+  }
+  
+  // Extract project root (everything before node_modules)
+  return __dirname.substring(0, nodeModulesIndex);
+}
+```
 
-3. **Direct Execution (Development)**
-   - When not in node_modules, uses current directory
-   - Allows testing without installation
+### Why This Works
+
+1. **MCP servers are always npm packages** - They're installed and run via package managers
+2. **The path structure is predictable** - `/project/node_modules/peekaboo-mcp/dist/index.js`
+3. **No edge cases needed** - Global installs aren't relevant for MCP servers
 
 ### Implementation Checklist
 
